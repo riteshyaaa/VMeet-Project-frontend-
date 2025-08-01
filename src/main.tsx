@@ -4,10 +4,15 @@ import './index.css'
 import App from './App.tsx'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Socket } from 'socket.io-client'
-import { SocketProvider } from './context/socketContext.tsx'
+
+import { BrowserRouter } from 'react-router-dom'
+import { SocketProvider } from './Context/SocketContext.tsx'
+
 
 createRoot(document.getElementById('root')!).render(
+ <BrowserRouter>
  <SocketProvider>
-    <App />
+   <App/>
  </SocketProvider>
+ </BrowserRouter>
 )

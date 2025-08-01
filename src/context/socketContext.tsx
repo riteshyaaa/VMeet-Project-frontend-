@@ -1,8 +1,9 @@
 import SocketIoClient from 'socket.io-client';
-import { createContext } from 'react';
+import { createContext, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 const ws_server = "http://localhost:5000"
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const SocketContext = createContext<any | null>(null);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, react-refresh/only-export-components
+export const SocketContext = createContext<any | null>(null);
  const socket = SocketIoClient(ws_server);
 
  interface Props { 
@@ -10,13 +11,21 @@ const SocketContext = createContext<any | null>(null);
  }
 
 export const SocketProvider: React.FC<Props> = ({ children}) =>{
+    const navigate = useNavigate(); // This is used to navigate to different pages
+    useEffect(() => {
+        const enterRoom =  ({roomId}: { roomId: string }) => {
+            console.log("Entering room with ID:", {roomId});
+            navigate(`/room/${roomId}`);
+        }
+        //  we are listening for the "roomCreated" event from the server
+        // and when it is emitted, we will call the enterRoom function  
+
+         socket.on("roomCreated", enterRoom);
+    },[])
+    
     return (
         <SocketContext.Provider value={{socket}}>
             {children}
         </SocketContext.Provider>
     )
 }
-
-// function SocketIoClient(ws_server: string) {
-//     throw new Error('Function not implemented.');
-// }
