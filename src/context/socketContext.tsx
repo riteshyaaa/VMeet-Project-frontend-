@@ -38,7 +38,11 @@ export const SocketProvider: React.FC<Props> = ({ children }) => {
   // Here you can implement the logic to fetch user data based on roomId and peerId
   useEffect(() => {
     const userId = UUIDV4();
-    const newPeer = new Peer(userId);
+    const newPeer = new Peer(userId, {
+      host: "localhost",
+      port: 9000,
+      path: "/myapp"
+    });
     setUser(newPeer);
     fetchUserFeed()
     const enterRoom = ({ roomId }: { roomId: string }) => {
