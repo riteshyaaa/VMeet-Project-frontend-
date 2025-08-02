@@ -16,6 +16,14 @@ export const SocketProvider: React.FC<Props> = ({ children }) => {
   const navigate = useNavigate(); // This is used to navigate to different pages
   //state variable to store userId
   const [user, setUser] = useState<Peer>();
+  const [stream, setStream] = useState<MediaStream>();
+  const fetchUserFeed = async () => {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: true,
+    });
+    setStream(stream)
+  };
   // Function to fetch user data
   const fetchUserData = ({
     roomId,
@@ -32,7 +40,7 @@ export const SocketProvider: React.FC<Props> = ({ children }) => {
     const userId = UUIDV4();
     const newPeer = new Peer(userId);
     setUser(newPeer);
-
+    fetchUserFeed()
     const enterRoom = ({ roomId }: { roomId: string }) => {
       console.log("Entering room with ID:", { roomId });
       navigate(`/room/${roomId}`);
@@ -45,7 +53,7 @@ export const SocketProvider: React.FC<Props> = ({ children }) => {
   }, []);
 
   return (
-    <SocketContext.Provider value={{ socket, user }}>
+    <SocketContext.Provider value={{ socket, user, stream}}>
       {children}
     </SocketContext.Provider>
   );
