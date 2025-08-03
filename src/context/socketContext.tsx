@@ -1,8 +1,12 @@
 import SocketIoClient from "socket.io-client";
-import { createContext, useEffect, useState } from "react";
+import { createContext, useEffect, useReducer, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Peer } from "peerjs";
 import { v4 as UUIDV4 } from "uuid";
+import { addPeerAction } from "../Actions/peerAction";
+import { peerReducer } from "../Reducers/peerReducers";
+
+
 const ws_server = "http://localhost:5000";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, react-refresh/only-export-components
 export const SocketContext = createContext<any | null>(null);
@@ -13,10 +17,13 @@ interface Props {
 }
 
 export const SocketProvider: React.FC<Props> = ({ children }) => {
+
   const navigate = useNavigate(); // This is used to navigate to different pages
   //state variable to store userId
   const [user, setUser] = useState<Peer>();
   const [stream, setStream] = useState<MediaStream>();
+  const [peers, dispatch] = useReducer(peerReducer, {}); // peers->state
+
   const fetchUserFeed = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({
       video: true,
@@ -24,6 +31,7 @@ export const SocketProvider: React.FC<Props> = ({ children }) => {
     });
     setStream(stream)
   };
+
   // Function to fetch user data
   const fetchUserData = ({
     roomId,
@@ -35,6 +43,8 @@ export const SocketProvider: React.FC<Props> = ({ children }) => {
     console.log("Fetching user data");
     console.log(roomId, participants);
   };
+
+
   // Here you can implement the logic to fetch user data based on roomId and peerId
   useEffect(() => {
     const userId = UUIDV4();
@@ -56,8 +66,33 @@ export const SocketProvider: React.FC<Props> = ({ children }) => {
     socket.on("getUser", fetchUserData);
   }, []);
 
+
+ useEffect(() => {
+        if(!user || !stream) return;
+
+        socket.on("userJoined", ({peerId}) => {
+            const call = user.call(peerId, stream);
+            console.log("Calling the new peer", peerId);
+            call.on("stream", () => {
+                dispatch(addPeerAction(peerId, stream));
+            })
+        })
+
+        user.on("call", (call) => {
+            // what to do when other peers on the group call you when u joined
+            console.log("receiving a call");
+            call.answer(stream);
+            call.on("stream", () => {
+                dispatch(addPeerAction(call.peer, stream));
+            })
+        })
+
+        socket.emit("ready");
+    }, [user, stream])
+
+
   return (
-    <SocketContext.Provider value={{ socket, user, stream}}>
+    <SocketContext.Provider value={{ socket, user, stream, peers}}>
       {children}
     </SocketContext.Provider>
   );
